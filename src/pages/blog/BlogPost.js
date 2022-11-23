@@ -1,7 +1,24 @@
 import { Link } from 'react-router-dom';
 import React from 'react';
 import { useEffect } from 'react';
+import { useState } from 'react';
+import axios from 'axios';
 const BlogPost = () => {
+  const [inputs, setInputs] = useState({});
+  const [inputFile, setInputFile] = useState({});
+  function hanldeInput(e) {
+    const nameInput = e.target.name;
+    const value = e.target.value;
+    setInputs((state) => ({ ...state, [nameInput]: value }));
+  }
+  function hanldeInputFile(e) {
+    const file = e.target.files;
+    let reader = new FileReader();
+    reader.onload = (e) => {
+      setInputFile(file[0]);
+    };
+    reader.readAsDataURL(file[0]);
+  }
   useEffect(() => {
     var isAdvancedUpload = (function () {
       var div = document.createElement('div');
@@ -122,25 +139,63 @@ const BlogPost = () => {
       uploadButton.innerHTML = `Upload`;
     });
   }, []);
+  function post(e) {
+    e.preventDefault();
+    const getDataUser = localStorage.getItem('user');
+    const dataUser = JSON.parse(getDataUser);
+    console.log('dataUser: ', dataUser);
+    let accessToken = dataUser.token;
+    let config = {
+      headers: {
+        Authorization: 'Bearer ' + accessToken,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Accept: 'application/json'
+      }
+    };
+    // const data = {
+    //   title: inputs.title,
+    //   tag: inputs.tag,
+    //   des: inputs.description,
+    //   img: inputFile.name
+    // };
+    const formData = new FormData();
+
+    formData.append('title', inputs.title);
+    formData.append('tag', inputs.tag);
+    formData.append('des', inputs.description);
+    formData.append('img', inputFile.name);
+    formData.append('name-user', dataUser.data.email);
+    console.log('formData: ', formData);
+    axios.post('LinkAPI', formData, config).then((res) => {});
+  }
   return (
     <section id="form">
-      <form action>
+      <form onSubmit={post} enctype="multipart/form-data">
         <div className="upload-files-container">
           <div style={{ width: '100%' }}>
             <div className="row">
               <div className="col-sm-5">
                 <div className="blog-form">
                   <h2>Blog Import Content</h2>
-                  <input type="text" placeholder="Title" />
-                  <select>
-                    <option value="volvo">Grammar</option>
-                    <option value="saab">Vocabulary</option>
+                  <input
+                    type="text"
+                    placeholder="title"
+                    name="title"
+                    defaultValue={''}
+                    onChange={hanldeInput}
+                  />
+                  <select name="tag" onChange={hanldeInput}>
+                    <option value="">Choose Tag</option>
+                    <option value="Grammar">Grammar</option>
+                    <option value="Vocabulary">Vocabulary</option>
                   </select>
                   <textarea
                     placeholder="Describe content here..."
                     rows={12}
                     cols={46}
                     defaultValue={''}
+                    onChange={hanldeInput}
+                    name="description"
                   />
                 </div>
               </div>
@@ -160,7 +215,12 @@ const BlogPost = () => {
                       or{' '}
                       <span className="browse-files">
                         {' '}
-                        <input type="file" className="default-file-input" />{' '}
+                        <input
+                          onChange={hanldeInputFile}
+                          type="file"
+                          className="default-file-input"
+                          name="img"
+                        />{' '}
                         <span className="browse-files-text">browse file</span>{' '}
                         <span>from device</span>{' '}
                       </span>{' '}
@@ -186,7 +246,7 @@ const BlogPost = () => {
             </div>
           </div>
           <div className="center">
-            <button type="button" className="upload-button">
+            <button type="submit" className="upload-button">
               {' '}
               Upload{' '}
             </button>
